@@ -24,7 +24,13 @@ app.get('/', function (req, res) {
 var tradeEndpoints = {};
 tradeEndpoints['EURUSD'] = {delay: 500, success: true};
 tradeEndpoints['EURGBP'] = {delay: 1000, success: true};
-tradeEndpoints['AUDCHF'] = {delay: 300, success: function() { return rand(0, 1, 0) == 0; }};
+
+// todo: for now make them all true until error handling added to
+//       the client
+//tradeEndpoints['AUDCHF'] = {delay: 300, success: function() {  return rand(0, 1, 0) == 0; }};
+tradeEndpoints['AUDCHF'] = {delay: 300, success: true};
+tradeEndpoints['GBPCHF'] = {delay: 300, success: true};
+tradeEndpoints['AUDUSD'] = {delay: 300, success: true};
 
 app.use(function(req, res, next) {
   res.header('Access-Control-Allow-Origin', '*');
