@@ -1,4 +1,8 @@
-var debug = require('debug')('server');
+var debugTicks = require('debug')('server:ticks');
+var debugDirections = require('debug')('server:directions');
+var debugDeltas = require('debug')('server:deltas');
+var debugPrices = require('debug')('server:prices');
+var debugSpreads = require('debug')('server:spreads');
 
 var app = require('express')();
 var server = require('http').Server(app);
@@ -13,7 +17,7 @@ app.get('/', function (req, res) {
 
 var streams = {};
 
-streams['EURUSD'] = createStream('EURUSD');
+
 // streams['EURGBP'] = createStream('EURGBP');
 // streams['AUDCHF'] = createStream('AUDCHF');
 // streams['GBPCHF'] = createStream('GBPCHF');
@@ -23,7 +27,7 @@ io.on('connection', function (socket) {
 
   for (var stream in streams) {
     streams[stream].subscribe(function(tick) {
-      console.log(tick);
+      debugTicks(tick);
       socket.emit('tick', tick);
     });
   }
@@ -43,54 +47,99 @@ function rand(min, max, scale) {
   return (Math.random() * (max - min) + min).toFixed(scale);
 }
 
-function createStream(ccyCpl) {
+var createStream = function(ccyCpl) {
 
-  //var previousBid = rand(1, 2, 5);
-  //var previousOffer = rand(1, 2, 5);
-
+  // stream of spreads, gives us:
+  //
+  // 1.12, 1.13, 1.05, etc
   var spreads = Rx.Observable
     .defer(function() {
 
-      return Rx.Observable.return(rand(1,2,2)).delay(parseInt(rand(2000, 3000, 0)))
-    }).repeat();
+      var val = parseFloat(rand(1,2,2)) / 10000;
 
-  var prices = Rx.Observable
+      return Rx.Observable.return(val).delay(parseInt(rand(2000, 3000, 0)))
+    }).repeat().do(debugSpreads);
+
+  // spreads.subscribe(function(x) {
+  //   debugSpreads(x);
+  // })
+
+  // stream of deltas, gives us:
+  // 0.00005, 0.00004, 0.00002, etc
+  var deltas = Rx.Observable
     .defer(function() {
 
-      return Rx.Observable.return(rand(1,2,5)).delay(parseInt(rand(3000, 5000, 0)))
+      var delta = rand(1,6,0) / 100000;
+      delta = parseFloat(delta.toFixed(5));
+
+      return Rx.Observable.return(delta).delay(parseInt(rand(3000, 5000, 0)))
     }).repeat();
 
+  // stream of directions, e.g.
+  // 1, -1, -1, 1, etc
+  var directions = randomTimeIntervalStream(1000, 2000, function() {
+    var val = rand(0, 1, 0);
+
+    return val == 0 ? -1 : 1;
+  });
+
+  // combine the deltas with the directions to get:
+  // 0.00001, -0.00003, etc
+  deltas = deltas.combineLatest(directions).select(function(x) {
+    return x[0] * x[1];
+  }).do(debugDeltas);
+
+  // take the deltas, start with 1.2, and accumulate the value
+  // using scan
+  // e.g.
+  //
+  // 1.20000 + -0.00005 = 1.19995
+  var prices = deltas.startWith(1.20000).scan(function(acc, curr) {
+
+    debugPrices('acc', acc);
+    debugPrices('curr', curr);
+
+    var yield = acc + curr;
+
+    debugPrices('yield = ' + yield);
+
+    return parseFloat(yield);
+  });
+
+  prices.subscribe(function(x) {
+    debugPrices(x);
+  });
+
+  // the final stream combines the prices and the spreads
   var stream = prices.combineLatest(spreads).select(function(x) {
 
-    console.log(x);
-
-    var spread = (x[1] / 1000) / 2;
+    var spread = x[1] / 2;
     var mid = parseFloat(x[0]);
 
     var bid = (mid - spread).toFixed(5);
     var ask = (mid + spread).toFixed(5);
 
     return { bid: bid, ask: ask, ccyCpl: ccyCpl };
-  })
+  });
+
+  return stream;
+
+  //return Rx.Observable.return(1);
+}
+
+function randomTimeIntervalStream(minTime, maxTime, produceValue) {
+  var stream = Rx.Observable
+    .defer(function() {
+
+      var val = produceValue();
+
+      return Rx.Observable.return(val).delay(parseInt(rand(minTime, maxTime, 0)))
+    }).repeat();
 
   return stream;
 }
 
-Rx.Observable.prototype.pairWithPrevious = function() {
-  return this.scan(0, 0), function(acc, curr) { return { prev: acc.item1, curr: acc.item2}; };
-};
-
-
-// public static IObservable<Tuple<TSource, TSource>>
-//     PairWithPrevious<TSource>(this IObservable<TSource> source)
-// {
-//     return source.Scan(
-//         Tuple.Create(default(TSource), default(TSource)),
-//         (acc, current) => Tuple.Create(acc.Item2, current));
-// }
-
-
-
+streams['EURUSD'] = createStream('EURUSD');
 
 
 
