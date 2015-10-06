@@ -1,21 +1,66 @@
-var debugTicks = require('debug')('server:ticks');
-var debugDirections = require('debug')('server:directions');
-var debugDeltas = require('debug')('server:deltas');
-var debugPrices = require('debug')('server:prices');
-var debugSpreads = require('debug')('server:spreads');
+var debugTicks = require('debug')('server:streams:ticks');
+var debugDirections = require('debug')('server:streams:directions');
+var debugDeltas = require('debug')('server:streams:deltas');
+var debugPrices = require('debug')('server:streams:prices');
+var debugSpreads = require('debug')('server:streams:spreads');
+var debugTrades = require('debug')('server:trades');
 
 var app = require('express')();
 var server = require('http').Server(app);
+var bodyParser = require('body-parser');
 var io = require('socket.io')(server);
 var Rx = require('rx');
 
 server.listen(8080);
 
+app.use(bodyParser.json());
+
 app.get('/', function (req, res) {
   res.sendfile(__dirname + '/index.html');
 });
 
-app.post('/trades/execute', function(req, res){
+var tradeEndpoints = {};
+tradeEndpoints['EURUSD'] = {delay: 500, success: true};
+tradeEndpoints['EURGBP'] = {delay: 1000, success: true};
+tradeEndpoints['AUDCHF'] = {delay: 300, success: function() { return rand(0, 1, 0) == 0; }};
+
+app.use(function(req, res, next) {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
+
+app.post('/trades/execute', function(req, res) {
+
+  debugTrades(req.body);
+
+  var ccyCpl = req.body.ccyCpl;
+
+  if (!ccyCpl) {
+    return;
+  }
+
+  debugTrades(ccyCpl);
+  debugTrades(tradeEndpoints);
+  debugTrades(tradeEndpoints[ccyCpl]);
+
+  var endpoint = tradeEndpoints[ccyCpl];
+  var result;
+
+  if (isFunction(endpoint.success)) {
+    result = endpoint.success();
+  } else {
+    result = endpoint.success;
+  }
+
+  var statusCode = result ? 200 : 500;
+
+  //setTimeout(function() { return res.sendStatus(statusCode) }, endpoint.delay);
+
+  //return res.sendStatus(200).end();
+
+  setTimeout(function() { res.sendStatus(statusCode).end() }, endpoint.delay);
 
 });
 
@@ -25,20 +70,9 @@ io.on('connection', function (socket) {
 
   for (var stream in streams) {
     streams[stream].subscribe(function(tick) {
-      debugTicks(tick);
       socket.emit('tick', tick);
     });
   }
-
-  // stream.subscribe(function(x) {
-  //   console.log(x.bid);
-  //   socket.emit('tick', x);
-  // });
-
-  // socket.on('subscribe', function (ccyCpl) {
-  //   debug('subscribe: ' + ccyCpl);
-
-  // });
 });
 
 function rand(min, max, scale) {
@@ -105,7 +139,7 @@ var createStream = function(ccyCpl, initialValue) {
     var ask = (mid + spread).toFixed(5);
 
     return { bid: bid, ask: ask, ccyCpl: ccyCpl };
-  });
+  }).do(debugTicks);
 
   return stream;
 }
@@ -122,12 +156,15 @@ function randomTimeIntervalStream(minTime, maxTime, produceValue) {
   return stream;
 }
 
+function isFunction(functionToCheck) {
+ var getType = {};
+ return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+}
+
 streams['EURUSD'] = createStream('EURUSD', 1.20000).singleInstance();
 streams['EURGBP'] = createStream('EURGBP', 1.30000).singleInstance();
 streams['AUDCHF'] = createStream('AUDCHF', 1.44334).singleInstance();
 streams['GBPCHF'] = createStream('GBPCHF', 1.23411).singleInstance();
 streams['AUDUSD'] = createStream('AUDUSD', 1.11234).singleInstance();
-
-
 
 
