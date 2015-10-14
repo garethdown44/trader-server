@@ -1,3 +1,5 @@
+var debug = require('debug')('server:options');
+
 function BlackScholes(PutCallFlag, S, X, T, r, v) {
 
   var d1, d2;
@@ -26,11 +28,41 @@ function CND(x) {
   * (a1 + k * (-0.356563782 + k * (1.781477937 + k * (-1.821255978 + k * 1.330274429)))) ;
 }
 
-var rate = 1.1100;
-var strike = 1.4000;
+// var rate = 1.1100;
+// var strike = 1.4000;
 
-var notional = 1000000;
+// var notional = 1000000;
 
-var result = BlackScholes('c', notional * rate, notional * strike, 1, 0.05, 0.2);
+//var result = BlackScholes('c', notional * rate, notional * strike, 1, 0.05, 0.2);
 
-console.log(result);
+module.exports = function(app) {
+  app.post('/options/price', function(req, res) {
+
+    debug('/options/price - entry()', req.body);
+
+    var option = req.body;
+
+    // todo: for now just price the first leg
+    var leg = option.legs[0];
+    var callPut = leg.type == 'call' ? 'c' : 'p';
+    var strike = leg.strike;
+    var rate = 1.234; // todo: get live rate
+
+    var priceNow = leg.notional * rate;
+    var futurePrice = leg.notional * leg.strike;
+    var time = 1; // todo: this is time as expressed in terms of one year
+    var riskFreeRate = 0.05; // todo: source this from somewhere
+
+    var sigma = 0.2; // made up
+
+    debug('params', callPut, priceNow, futurePrice, time, riskFreeRate, sigma);
+
+    var price = BlackScholes(callPut, priceNow, futurePrice, time, riskFreeRate, sigma);
+
+    option.price = price;
+
+    debug('price is: ', price);
+
+    return res.send(option).end();
+  });
+}

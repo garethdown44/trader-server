@@ -18,3 +18,4 @@ var blotter = new Rx.ReplaySubject(30);
 require('./trades')(blotter, app);
 require('./prices')(io);
 require('./blotter')(blotter, io);
+require('./price-option')(app);
