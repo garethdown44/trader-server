@@ -35,7 +35,7 @@ module.exports = function(io) {
 
     // stream of deltas, gives us:
     // 0.00005, 0.00004, 0.00002, etc
-    var deltas = randomTimeIntervalStream(50, 5000, function() {
+    var deltas = randomTimeIntervalStream(25, 5000, function() {
         var delta = rand(1,6,0) / 100000;
         delta = parseFloat(delta.toFixed(5));
 
@@ -105,4 +105,5 @@ module.exports = function(io) {
   streams['AUDCHF'] = createStream('AUDCHF', 1.44334).singleInstance();
   streams['GBPCHF'] = createStream('GBPCHF', 1.23411).singleInstance();
   streams['AUDUSD'] = createStream('AUDUSD', 1.11234).singleInstance();
+  streams['EURHKD'] = createStream('EURHKD', 1.56789).singleInstance();
 }
