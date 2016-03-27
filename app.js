@@ -4,7 +4,7 @@ var bodyParser = require('body-parser');
 var io = require('socket.io')(server);
 var Rx = require('rx');
 
-var port = process.env.PORT || 8080;
+var port = process.env.PORT || 8081;
 server.listen(port);
 
 app.use(bodyParser.json());
