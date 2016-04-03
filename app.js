@@ -17,5 +17,6 @@ var blotter = new Rx.ReplaySubject(30);
 
 require('./trades')(blotter, app);
 require('./prices')(io);
-require('./blotter')(blotter, io);
+require('./my-trades')(blotter, io);
+require('./team-trades')(blotter, io);
 require('./price-option')(app);

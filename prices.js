@@ -6,6 +6,8 @@ var debugSpreads = require('debug')('server:streams:spreads');
 
 var Rx = require('rx');
 
+var rand = require('./random');
+
 module.exports = function(io) {
 
   var streams = {};
@@ -18,10 +20,6 @@ module.exports = function(io) {
       });
     }
   });
-
-  function rand(min, max, scale) {
-    return (Math.random() * (max - min) + min).toFixed(scale);
-  }
 
   var createStream = function(ccyCpl, initialValue) {
 

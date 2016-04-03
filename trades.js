@@ -63,7 +63,6 @@ module.exports = function(blotter, app) {
     }
 
     setTimeout(complete, endpoint.delay);
-
   });
 }
 
