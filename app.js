@@ -21,9 +21,10 @@ require('./my-trades')(blotter, io);
 require('./team-trades')(blotter, io);
 require('./price-option')(app);
 
+// this endpoint is here so that the client has something to call to make sure the
+// server is up and notify the user if it's waiting. heroku's free instances stop the 
+// process periodically and this causes the client to hang while it's waiting for the 
+// server to spin up.
 app.get('/up', function(req, res) {
-
-  setTimeout(function() {
-    res.status(200).end();
-  }, 1000);
+  res.status(200).end();
 });
