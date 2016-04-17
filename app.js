@@ -20,3 +20,10 @@ require('./prices')(io);
 require('./my-trades')(blotter, io);
 require('./team-trades')(blotter, io);
 require('./price-option')(app);
+
+app.get('/up', function(req, res) {
+
+  setTimeout(function() {
+    res.status(200).end();
+  }, 1000);
+});
