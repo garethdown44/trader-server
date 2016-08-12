@@ -28,3 +28,5 @@ require('./price-option')(app);
 app.get('/up', function(req, res) {
   res.status(200).end();
 });
+
+console.log('trader-server running on port ' + port);
