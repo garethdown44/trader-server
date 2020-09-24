@@ -1,0 +1,22 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.19.0
+ignore: {}
+# patches apply the minimum changes required to fix a vulnerability
+patch:
+  'npm:hawk:20160119':
+    - marketmuster > request > hawk:
+        patched: '2020-09-24T04:14:08.662Z'
+  'npm:http-signature:20150122':
+    - marketmuster > request > http-signature:
+        patched: '2020-09-24T04:14:08.662Z'
+  'npm:mime:20170907':
+    - marketmuster > request > mime:
+        patched: '2020-09-24T04:14:08.662Z'
+    - marketmuster > request > form-data > mime:
+        patched: '2020-09-24T04:14:08.662Z'
+  'npm:qs:20140806-1':
+    - marketmuster > request > qs:
+        patched: '2020-09-24T04:14:08.662Z'
+  'npm:request:20160119':
+    - marketmuster > request:
+        patched: '2020-09-24T04:14:08.662Z'
